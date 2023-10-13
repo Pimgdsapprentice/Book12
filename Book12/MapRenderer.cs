@@ -29,10 +29,13 @@ namespace Book12
         public static int mapY_Max = 700;
         public static Size size = new Size(mapX_Max, mapY_Max);
 
-        public static int cityDotBorder = 8;
-        public static int cityDotInner = 6;
+        public static int cityDotBorder = 9;
+        public static int cityDotInner = 7;
 
-        Randomer randomer = new Randomer();
+        public static int cityExclusion = 50;
+        public static int cityExclusionflux = 30;
+
+        Random rngI = Randomer.Instance;
         public static Tuple<int, int> randomCords(int xbuffer, int ybuffer) 
         {
             Random rnd = new Random();
@@ -41,7 +44,6 @@ namespace Book12
             return Tuple.Create(randomX, randomY);
             
         }
-
         public void RenderMapInitial()
         {
             Bitmap bmp_Map = new Bitmap(size.Width, size.Height);
@@ -164,7 +166,6 @@ namespace Book12
             map_Dict["Map"] = bmp_Map;
             map_Dict["is_Land_Map"] = bmp_is_Land;
         }
-
         public Bitmap AddDot(int x, int y, Color dotColor, int dotRad, Bitmap bmp_map)
         {
             using (Graphics graphics = Graphics.FromImage(bmp_map))
@@ -182,34 +183,54 @@ namespace Book12
             return bmp_map;
         }
 
-
+        public static Bitmap CopyBitmap(Bitmap sourceBitmap)
+        {
+            if (sourceBitmap == null)
+                return null;
+            Bitmap copiedBitmap = new Bitmap(sourceBitmap.Width, sourceBitmap.Height);
+            using (Graphics g = Graphics.FromImage(copiedBitmap))
+            {
+                g.DrawImage(sourceBitmap, 0, 0, sourceBitmap.Width, sourceBitmap.Height);
+            }
+            return copiedBitmap;
+        }
         public void RenderCities()
         {
-            int citiescount = 10;
+            int citiescount = 50;
+            int generatedCities = 0;
+            int maxAttempts = 1000; // Set a maximum number of attempts to generate a city
 
-            Bitmap bmp_Cities = map_Dict["Map"];
+            Bitmap bmp_Cities = CopyBitmap(map_Dict["Map"]);
             map_Dict["cities_Map"] = bmp_Cities;
+            map_Dict["cities_Ex_Map"] = CopyBitmap(map_Dict["is_Land_Map"]);
+            Bitmap cities_Ex_Map = map_Dict["cities_Ex_Map"];
 
-            Bitmap bmp_isLand = map_Dict["is_Land_Map"];
-            for (int i = 0; i < citiescount; i++)
+            while (generatedCities < citiescount)
             {
+                if (maxAttempts <= 0)
+                {
+                    // Break the loop if we can't generate more cities
+                    break;
+                }
                 var coords = randomCords(cityDotBorder, cityDotBorder);
                 int x = coords.Item1;
                 int y = coords.Item2;
-                Color pixelColor = bmp_isLand.GetPixel(x, y);
+                Color pixelColor = cities_Ex_Map.GetPixel(x, y);
                 if (pixelColor == Color.FromArgb(34, 139, 34))
                 {
                     AddDot(x, y, Color.Gray, cityDotBorder, bmp_Cities);
                     AddDot(x, y, Color.Yellow, cityDotInner, bmp_Cities);
+                    AddDot(x, y, Color.Black, cityExclusion + rngI.Next(cityExclusionflux), cities_Ex_Map);
+                    generatedCities++;
                 }
-                else
-                {
-                    i--;
-                }
+                maxAttempts--;
             }
-            
-            
-
+            if (maxAttempts <= 0)
+            {
+                MessageBox.Show("Unable to place all cities. Some areas may be too crowded.");
+            }
         }
+
+
     }
 }

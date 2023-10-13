@@ -131,38 +131,6 @@ namespace Engine
             t1 = (float)Math.Pow(t1, Persistence);
             return t1;
         }
-
-
-        public static float GenerateWithSeed(float x, float y, int Octaves, float Frequency, float Persistence, float XAdd, float YAdd, int Seed)
-        {
-            // Initialize the random number generator with the seed
-            Random rand = new Random(Seed);
-
-            float t1 = 0;
-            float t2 = 0;
-            float nPow = 0;
-
-            for (int i = 0; i < Octaves; i++)
-            {
-                float atote = 0.8843565F;
-                float k = i + 1;
-                nPow = (float)Math.Pow(2, i);
-
-                // Generate pseudo-random values using the seed
-                float pseudoRandomX = (float)rand.NextDouble();
-                float pseudoRandomY = (float)rand.NextDouble();
-
-                t1 += (Generate(((x + XAdd + pseudoRandomX) * nPow * Frequency), ((y + YAdd + pseudoRandomY) * nPow * Frequency) + YAdd) * (1 / nPow));
-                t2 += atote / nPow;
-            }
-
-            t1 = (t1 + t2) / (2 * t2);
-            t1 = (float)Math.Pow(t1, Persistence);
-            return t1;
-        }
-
-
-
         public static float Generate(float x, float y, float z)
         {
             // Simple skewing factors for the 3D case
