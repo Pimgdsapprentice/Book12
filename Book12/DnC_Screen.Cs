@@ -13,6 +13,8 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Engine.Locations;
 using Engine.Language;
 using Engine.Language.Examples;
+using Engine;
+using System.Reflection;
 
 namespace Book12
 {
@@ -24,37 +26,80 @@ namespace Book12
         public static Dictionary<string, int> idIndex = new Dictionary<string, int>();
         public static Dictionary<int, Settlement> Settlements = new Dictionary<int, Settlement>();
 
-        public static List<int> MenuIndex = new List<int>();
 
-        Dictionary<int, string> mapKeyMappings = new Dictionary<int, string>
-                    {
-                        { 1, "Map" },
-                        { 2, "is_Land_Map" },
-                        { 3, "cities_Ex_Map" },
-                        { 4, "cities_Map" }
-                    };
+        public static string[] mapKeyMappings = new string[] { "Map", "is_Land_Map", "cities_Ex_Map", "cities_Map" };
 
-        public DnC_Screen(MainScreen main)
+        public MenuControls menuAtAddrs(string targetdirectory)
         {
-            InitializeComponent();
-            this.main = main;
-            MapRenderer mapper = new MapRenderer();
-            mapper.RenderMapInitial();
-            mapper.RenderCities();
-            map_Dict = MapRenderer.map_Dict;
+            return MenuList.SingleOrDefault(menu => menu.address == targetdirectory);
+        }
 
-            richTextBox1.Text = "---";
-            nOut("Input:");
-            MenuIndex.Add(1);
 
-            LanguageGenerator lg = new LanguageGenerator();
+        List<MenuControls> MenuList = new List<MenuControls>
+        {
+            new MenuControls(0, "Main Menu", ":Main Menu", "Map Selection"),
+            new MenuControls(1, "Map Menu", ":Main Menu/Map Selection", mapKeyMappings)
+        };
+        string crntMenuDir = ":Main Menu";
+        string[] menuSpecials = new string[] { ":Main Menu/Map Selection" };
 
-            //Found in PLGL.Examples. Set this to your own language (derived from Language).
-            Qen qen = new Qen();
-            lg.Language = qen;
+        private void MenuOut()
+        {
+            int index = 0;
+            nOut(menuAtAddrs(crntMenuDir).title + ":");
+            nOut("---");
+            foreach (string i in menuAtAddrs(crntMenuDir).submenus)
+            {
+                nOut($"{index++}: {i}");
+            }
+            nOut("e: Exit to Main Menu");
+            nOut("x-----");
+        }
 
-            richTextBox1.AppendText(lg.GenerateClean("Your sentence goes here!"));
+        private void HandleMenuInput()
+        {
+            int menuSel = -1;
+            try
+            {
+                menuSel = int.Parse(textBox1.Text);
+            }
+            catch (FormatException)
+            {
+                menuSel = -1;
+            }
+            catch (OverflowException)
+            {
+                menuSel = -1;
+            }
+            if (textBox1.Text == "e")
+            {
+                crntMenuDir = ":Main Menu";
+                MenuOut();
+            }
+            else if (crntMenuDir == ":Main Menu/Map Selection")
+            {
+                if (menuSel >= 0 && menuSel < menuAtAddrs(crntMenuDir).submenus.Count)
+                {
+                    main.ChangePictureBoxImage(map_Dict[mapKeyMappings[menuSel]]);
+                    MenuOut();
+                }
+                else
+                {
+                    nOut("Invalid Map choice");
+                    nOut("x-----");
+                }
+            }
+            else if (menuSel >= 0 && menuSel < menuAtAddrs(crntMenuDir).submenus.Count)
+            {
 
+                crntMenuDir = crntMenuDir + "/" + menuAtAddrs(crntMenuDir).submenus[menuSel];
+                MenuOut();
+
+            }
+            else
+            {
+                nOut("Invalid Input");
+            }
         }
 
         //Prevents closing of form
@@ -63,31 +108,40 @@ namespace Book12
             e.Cancel = true;
             this.Hide();
         }
-        //Keybindings
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        //Uses Enter For Menu Entry
+        private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (keyData == Keys.Enter)
-            {                
-                return true;
-            }
-            else if (keyData == Keys.Add)
+            // Check if the pressed key is NumPad Enter (ASCII code 13) and the focused control is textBox1
+            if (e.KeyChar == (char)Keys.Enter && this.ActiveControl == textBox1)
             {
-                Action2();
-                return true;
-            }
-            return base.ProcessCmdKey(ref msg, keyData);
-        }
-        private int ParseInt(string str)
-        {
-            if (int.TryParse(str, out int selectedOption))
-            {
-                return selectedOption;
-            }
-            else
-            {
-                return 0;
+                // Perform the same function as the button click
+                HandleMenuInput();
+                // Prevent the Enter key from being processed by the TextBox
+                e.Handled = true;
+                textBox1.Text = string.Empty;
             }
         }
+
+        public DnC_Screen(MainScreen main)
+        {
+            InitializeComponent();
+            this.main = main;
+
+            //Prepares Map
+            MapRenderer mapper = new MapRenderer();
+            mapper.RenderMapInitial();
+            mapper.RenderCities();
+            map_Dict = MapRenderer.map_Dict;
+            //Ensures Autoscroll
+            richTextBox1.ScrollBars = RichTextBoxScrollBars.Both;
+            richTextBox1.HideSelection = false;
+
+            //Menu();
+            MenuOut();
+        }
+
+
+
 
         private void nOut(string outLine)
         {
@@ -100,93 +154,14 @@ namespace Book12
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Menu();
+            HandleMenuInput();
         }
 
+        //Relatively Unused
         private void button2_Click(object sender, EventArgs e)
         {
             Action2();
         }
-
-        private void Menu()
-        {
-            if (MenuIndex.Count == 0)
-            {
-                DisplayMainMenu();
-            }
-            else if (MenuIndex.Count == 1)
-            {
-                HandleMainMenuInput();
-            }
-            else if (MenuIndex.Count == 2)
-            {
-                HandleMapSubMenuInput();
-            }
-        }
-
-        private void DisplayMainMenu()
-        {
-            nOut("---");
-            nOut("Input:");
-            MenuIndex.Add(1);
-        }
-
-        private void HandleMainMenuInput()
-        {
-            switch (textBox1.Text)
-            {
-                case "1":
-                    nOut("Choose Map To display:");
-                    MenuIndex.Add(1);
-                    break;
-                case "2":
-                    nOut("b");
-                    MenuIndex.Add(2);
-                    break;
-                default:
-                    inva();
-                    break;
-            }
-        }
-
-        private void HandleMapSubMenuInput()
-        {
-            switch (MenuIndex[1])
-            {
-                case 1:
-                    if (textBox1.Text == "e")
-                    {
-                        MenuIndex.Clear();
-                        DisplayMainMenu();
-                    }
-                    else if (mapKeyMappings.TryGetValue(ParseInt(textBox1.Text), out var imageKey))
-                    {
-                        main.ChangePictureBoxImage(map_Dict[imageKey]);
-                    }
-                    else
-                    {
-                        nOut("Invalid Map Call. (e - exit)");
-                    }
-                    break;
-                case 2:
-
-                    if (textBox1.Text == "e")
-                    {
-                        MenuIndex.Clear();
-                        DisplayMainMenu();
-                    }
-                    else
-                    {
-                        richTextBox1.AppendText("\nmade it you foker");
-                        nOut("Invalid Call. (e - exit)");
-                    }
-                    break;
-                default:
-                    inva();
-                    break;
-            }
-        }
-
 
         private void Action2()
         {

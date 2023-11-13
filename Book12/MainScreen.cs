@@ -11,7 +11,8 @@ namespace Book12
             InitializeComponent();
             pictureBox1.Size = MapRenderer.size;
             dnC_scrn = new DnC_Screen(this);
-            
+            dnC_scrn.Show();
+
         }
 
         public void ChangePictureBoxImage(Image newImage)
