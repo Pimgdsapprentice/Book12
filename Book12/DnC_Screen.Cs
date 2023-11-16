@@ -15,34 +15,67 @@ using Engine.Language;
 using Engine.Language.Examples;
 using Engine;
 using System.Reflection;
+using Engine.DelaunayVoronoi;
 
 namespace Book12
 {
     public partial class DnC_Screen : Form
     {
+        //References the first instance of Main Screen
         public MainScreen main = Application.OpenForms.OfType<MainScreen>().FirstOrDefault();
-
+        //Dictionary of Maps
         public static Dictionary<string, Bitmap> map_Dict = new Dictionary<string, Bitmap>();
-        public static Dictionary<string, int> idIndex = new Dictionary<string, int>();
-        public static Dictionary<int, Settlement> Settlements = new Dictionary<int, Settlement>();
 
+        public static Dictionary<string, Bitmap> dv_dict = new Dictionary<string, Bitmap>();
 
+        //Map Types
         public static string[] mapKeyMappings = new string[] { "Map", "is_Land_Map", "cities_Ex_Map", "cities_Map" };
 
-        public MenuControls menuAtAddrs(string targetdirectory)
+        
+
+
+        public DnC_Screen(MainScreen main)
         {
-            return MenuList.SingleOrDefault(menu => menu.address == targetdirectory);
+            InitializeComponent();
+            this.main = main;
+
+            //Creates a World
+            World.World_Name = "New World";
+            World.locationIndex = 0;
+            World.w_settlements = new Dictionary<int, NL_Settlement> { };
+
+            //Prepares Map
+            MapRenderer mapper = new MapRenderer();
+            mapper.RenderMapInitial();
+            mapper.RenderCities();
+            map_Dict = MapRenderer.map_Dict;
+
+            //DL gen
+            DVPrinter dvprint = new DVPrinter();
+            dvprint.GenerateAndDraw();
+            dv_dict = DVPrinter.map_Dict2;
+
+
+
+            //Ensures Autoscroll
+            richTextBox1.ScrollBars = RichTextBoxScrollBars.Both;
+            richTextBox1.HideSelection = false;
+
+            //Menu();
+            MenuOut();
         }
 
-
+        //Menu Section
+        string crntMenuDir = ":Main Menu";
         List<MenuControls> MenuList = new List<MenuControls>
         {
             new MenuControls(0, "Main Menu", ":Main Menu", "Map Selection"),
             new MenuControls(1, "Map Menu", ":Main Menu/Map Selection", mapKeyMappings)
         };
-        string crntMenuDir = ":Main Menu";
-        string[] menuSpecials = new string[] { ":Main Menu/Map Selection" };
-
+        public MenuControls menuAtAddrs(string targetdirectory)
+        {
+            return MenuList.SingleOrDefault(menu => menu.address == targetdirectory);
+        }
         private void MenuOut()
         {
             int index = 0;
@@ -55,9 +88,9 @@ namespace Book12
             nOut("e: Exit to Main Menu");
             nOut("x-----");
         }
-
         private void HandleMenuInput()
         {
+            //Try to get int from menu input
             int menuSel = -1;
             try
             {
@@ -71,9 +104,15 @@ namespace Book12
             {
                 menuSel = -1;
             }
+            //Checks if Exit
             if (textBox1.Text == "e")
             {
                 crntMenuDir = ":Main Menu";
+                MenuOut();
+            }
+            else if (textBox1.Text == "t")
+            {
+                main.ChangePictureBoxImage(dv_dict["Map"]);
                 MenuOut();
             }
             else if (crntMenuDir == ":Main Menu/Map Selection")
@@ -94,19 +133,11 @@ namespace Book12
 
                 crntMenuDir = crntMenuDir + "/" + menuAtAddrs(crntMenuDir).submenus[menuSel];
                 MenuOut();
-
             }
             else
             {
                 nOut("Invalid Input");
             }
-        }
-
-        //Prevents closing of form
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            e.Cancel = true;
-            this.Hide();
         }
         //Uses Enter For Menu Entry
         private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
@@ -121,33 +152,39 @@ namespace Book12
                 textBox1.Text = string.Empty;
             }
         }
-
-        public DnC_Screen(MainScreen main)
+        //Prevents closing of form
+        protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            InitializeComponent();
-            this.main = main;
-
-            //Prepares Map
-            MapRenderer mapper = new MapRenderer();
-            mapper.RenderMapInitial();
-            mapper.RenderCities();
-            map_Dict = MapRenderer.map_Dict;
-            //Ensures Autoscroll
-            richTextBox1.ScrollBars = RichTextBoxScrollBars.Both;
-            richTextBox1.HideSelection = false;
-
-            //Menu();
-            MenuOut();
+            e.Cancel = true;
+            this.Hide();
         }
 
+        public void objOut(object obj)
+        {
+            nOut($"Object Name: {nameof(obj)}");
 
+            Type objectType = obj.GetType();
+            FieldInfo[] fields = objectType.GetFields();
+            foreach (FieldInfo field in fields)
+            {
+                object value = field.GetValue(obj);
+                nOut($"{field.Name}: {value}");
+            }
+            // Get the properties of the object using reflection
+            PropertyInfo[] properties = obj.GetType().GetProperties();
+            // Loop through properties and print their names and values
+            foreach (PropertyInfo property in properties)
+            {
+                object value = property.GetValue(obj);
+                nOut($"{property.Name}: {value}");
+            }
+        }
 
-
-        private void nOut(string outLine)
+        public void nOut(string outLine)
         {
             richTextBox1.AppendText("\n" + outLine);
         }
-        private void inva()
+        public void inva()
         {
             nOut("Invalid choice.");
         }

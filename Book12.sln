@@ -3,9 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Book12", "Book12\Book12.csproj", "{6237373B-94F3-4018-BB7F-93FE94DFA349}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Book12", "Book12\Book12.csproj", "{6237373B-94F3-4018-BB7F-93FE94DFA349}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine", "Engine\Engine.csproj", "{D52F2CDD-3FCF-4E7D-B56C-A7DFE743CA45}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Engine", "Engine\Engine.csproj", "{D52F2CDD-3FCF-4E7D-B56C-A7DFE743CA45}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7E27796C-C275-477C-BBAF-E136FA6AF528}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE.txt = LICENSE.txt
+		Book12\NOtes.txt = Book12\NOtes.txt
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

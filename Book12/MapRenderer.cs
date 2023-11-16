@@ -8,6 +8,10 @@ using System.Windows.Forms;
 using System.Xml;
 
 using Engine;
+using Engine.Language;
+using Engine.Language.Examples;
+using Engine.LanguageB;
+using Engine.Locations;
 
 
 
@@ -15,6 +19,7 @@ namespace Book12
 {
     public class MapRenderer
     {
+        DnC_Screen dnC_scrn;
         //Dictionary for bmps of Map
         public static Dictionary<string, Bitmap> map_Dict = new Dictionary<string, Bitmap>();
         //"Map", "is_Land_Map"
@@ -196,6 +201,12 @@ namespace Book12
         }
         public void RenderCities()
         {
+            //Placeholder Language
+            LanguageGenerator lg = new LanguageGenerator();
+            //Found in PLGL.Examples. Set this to your own language (derived from Language).
+            Qen qen = new Qen();
+            lg.Language = qen;
+
             int citiescount = 50;
             int generatedCities = 0;
             int maxAttempts = 1000; // Set a maximum number of attempts to generate a city
@@ -218,6 +229,13 @@ namespace Book12
                 Color pixelColor = cities_Ex_Map.GetPixel(x, y);
                 if (pixelColor == Color.FromArgb(34, 139, 34))
                 {
+                    NL_Settlement nL_Settlement = new NL_Settlement(World.locationIndex, x, y, lg.GenerateClean(LanguageReferences.realCityNames[generatedCities]));
+
+                    World.w_settlements.Add(World.locationIndex, nL_Settlement);
+                    World.locationIndex++;
+
+
+
                     AddDot(x, y, Color.Gray, cityDotBorder, bmp_Cities);
                     AddDot(x, y, Color.Yellow, cityDotInner, bmp_Cities);
                     AddDot(x, y, Color.Black, cityExclusion + rngI.Next(cityExclusionflux), cities_Ex_Map);

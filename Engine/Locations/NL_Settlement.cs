@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Engine.Locations
 {
-    public class Settlement : B_Location
+    public class NL_Settlement : NamedLocation
     {
-        public Settlement(string name, int x_Cord, int y_Cord) : base(name, x_Cord, y_Cord)
+        public NL_Settlement(int id, int x_Cord, int y_Cord, string locationName) : base(id, x_Cord, y_Cord, locationName)
         {
 
         }
