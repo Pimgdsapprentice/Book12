@@ -1,0 +1,1 @@
+- Note: code uses Point1 and Point2, rather that site1,2

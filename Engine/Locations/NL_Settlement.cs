@@ -10,7 +10,6 @@ namespace Engine.Locations
     {
         public NL_Settlement(int id, int x_Cord, int y_Cord, string locationName) : base(id, x_Cord, y_Cord, locationName)
         {
-
         }
     }
 }

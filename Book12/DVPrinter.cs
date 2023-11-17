@@ -1,7 +1,7 @@
-﻿using DelaunayVoronoi;
+﻿using Book12.GameData;
+using DelaunayVoronoi;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -13,9 +13,6 @@ namespace Engine.DelaunayVoronoi
 {
     public class DVPrinter
     {
-
-        public static Dictionary<string, Bitmap> map_Dict2 = new Dictionary<string, Bitmap>();
-
         private DelaunayTriangulator delaunay = new DelaunayTriangulator();
         private Voronoi voronoi = new Voronoi();
         public int PointCount { get; set; } = 2000;
@@ -28,19 +25,11 @@ namespace Engine.DelaunayVoronoi
         public double DiagramWidth => mapX_Max;
         public double DiagramHeight => mapY_Max;
 
-        public ICommand DrawCommand { get; set; }
-
-        public DVPrinter()
-        {
-            DrawCommand = new Command(param => GenerateAndDraw());
-        }
-
         public void GenerateAndDraw()
         {
             var points = delaunay.GeneratePoints(PointCount, DiagramWidth, DiagramHeight);
             var triangulation = delaunay.BowyerWatson(points);
             var voronoiEdges = voronoi.GenerateEdgesFromDelaunay(triangulation);
-
             Bitmap bitmap = new Bitmap(mapX_Max, mapY_Max);
 
             using (Graphics g = Graphics.FromImage(bitmap))
@@ -50,8 +39,34 @@ namespace Engine.DelaunayVoronoi
                 DrawVoronoi(g, voronoiEdges);
             }
 
-            map_Dict2["Map"] = bitmap;
+            World.map_Dict["DVMap"] = bitmap;
         }
+
+        public void GenerateAndDrawWithCenters(IEnumerable<DVPoint> centerPoints)
+        {
+            if (centerPoints == null)
+            {
+                throw new ArgumentNullException(nameof(centerPoints));
+            }
+
+            // Generate Delaunay triangulation and Voronoi edges using predetermined centers
+            var triangulation = delaunay.BowyerWatson(centerPoints);
+            var voronoiEdges = voronoi.GenerateEdgesFromDelaunay(triangulation);
+            Bitmap bitmap = new Bitmap(mapX_Max, mapY_Max);
+
+            using (Graphics g = Graphics.FromImage(bitmap))
+            {
+                // Draw Voronoi diagram with predetermined centers
+                DrawVoronoi(g, voronoiEdges);
+            }
+
+            World.map_Dict["DVMapWithCenters"] = bitmap;
+        }
+
+        
+
+
+
 
         private void DrawPoints(Graphics g, IEnumerable<DVPoint> points)
         {
@@ -60,6 +75,7 @@ namespace Engine.DelaunayVoronoi
                 g.FillEllipse(System.Drawing.Brushes.Red, (float)point.X, (float)point.Y, 1, 1);
             }
         }
+
         private void DrawTriangulation(Graphics g, IEnumerable<Triangle> triangulation)
         {
             var edges = new List<Edge>();
@@ -94,42 +110,6 @@ namespace Engine.DelaunayVoronoi
                     Convert.ToInt32(edge.Point2.Y)
                 );
             }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
-    public class Command : ICommand
-    {
-        private readonly Action<object> _execute;
-        private readonly Func<object, bool> _canExecute;
-
-        public Command(Action<object> execute)
-            : this(execute, param => true)
-        {
-        }
-
-        public Command(Action<object> execute, Func<object, bool> canExecute)
-        {
-            _execute = execute;
-            _canExecute = canExecute;
-        }
-
-        public void Execute(object parameter)
-        {
-            _execute(parameter);
-        }
-
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object parameter)
-        {
-            return (_canExecute == null) || _canExecute(parameter);
         }
     }
 }

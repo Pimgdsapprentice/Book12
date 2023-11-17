@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Drawing;
 
 namespace DelaunayVoronoi
 {
@@ -23,6 +24,11 @@ namespace DelaunayVoronoi
         {
             X = x;
             Y = y;
+        }
+
+        public PointF ToPointF()
+        {
+            return new PointF((float)X, (float)Y);
         }
 
         public override string ToString()

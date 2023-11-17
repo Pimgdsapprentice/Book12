@@ -5,6 +5,8 @@
         public DVPoint Point1 { get; }
         public DVPoint Point2 { get; }
 
+        public DVPoint Midpoint => new DVPoint((Point1.X + Point2.X) / 2, (Point1.Y + Point2.Y) / 2);
+
         public Edge(DVPoint point1, DVPoint point2)
         {
             Point1 = point1;

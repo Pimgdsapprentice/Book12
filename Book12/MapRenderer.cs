@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
-
+using Book12.GameData;
 using Engine;
 using Engine.Language;
 using Engine.Language.Examples;
@@ -20,9 +20,6 @@ namespace Book12
     public class MapRenderer
     {
         DnC_Screen dnC_scrn;
-        //Dictionary for bmps of Map
-        public static Dictionary<string, Bitmap> map_Dict = new Dictionary<string, Bitmap>();
-        //"Map", "is_Land_Map"
         //Map Perlin Settings
         public static float[] mapESet = new float[] { 10, 0.0036F, 1.5F, 2400, 10 };
         public static float[] mapMSet = new float[] { 10, 0.005F, 1.7F, 0, 100 };
@@ -168,8 +165,8 @@ namespace Book12
 
                 }
             }
-            map_Dict["Map"] = bmp_Map;
-            map_Dict["is_Land_Map"] = bmp_is_Land;
+            World.map_Dict["Map"] = bmp_Map;
+            World.map_Dict["is_Land_Map"] = bmp_is_Land;
         }
         public Bitmap AddDot(int x, int y, Color dotColor, int dotRad, Bitmap bmp_map)
         {
@@ -211,10 +208,10 @@ namespace Book12
             int generatedCities = 0;
             int maxAttempts = 1000; // Set a maximum number of attempts to generate a city
 
-            Bitmap bmp_Cities = CopyBitmap(map_Dict["Map"]);
-            map_Dict["cities_Map"] = bmp_Cities;
-            map_Dict["cities_Ex_Map"] = CopyBitmap(map_Dict["is_Land_Map"]);
-            Bitmap cities_Ex_Map = map_Dict["cities_Ex_Map"];
+            Bitmap bmp_Cities = CopyBitmap(World.map_Dict["Map"]);
+            World.map_Dict["cities_Map"] = bmp_Cities;
+            World.map_Dict["cities_Ex_Map"] = CopyBitmap(World.map_Dict["is_Land_Map"]);
+            Bitmap cities_Ex_Map = World.map_Dict["cities_Ex_Map"];
 
             while (generatedCities < citiescount)
             {
@@ -233,9 +230,6 @@ namespace Book12
 
                     World.w_settlements.Add(World.locationIndex, nL_Settlement);
                     World.locationIndex++;
-
-
-
                     AddDot(x, y, Color.Gray, cityDotBorder, bmp_Cities);
                     AddDot(x, y, Color.Yellow, cityDotInner, bmp_Cities);
                     AddDot(x, y, Color.Black, cityExclusion + rngI.Next(cityExclusionflux), cities_Ex_Map);
@@ -249,6 +243,71 @@ namespace Book12
             }
         }
 
+        public static class FloodFill
+        {
+            public static void ColorRegions(Bitmap bitmap, List<Point> predeterminedPoints)
+            {
+                if (bitmap == null)
+                {
+                    throw new ArgumentNullException(nameof(bitmap));
+                }
 
+                // Create a dictionary to store the color assigned to each region
+                Dictionary<Point, Color> regionColors = new Dictionary<Point, Color>();
+
+                // Used to check if a pixel has been visited
+                bool[,] visited = new bool[bitmap.Width, bitmap.Height];
+
+                // Assign a unique color to each region
+                foreach (var seedPoint in predeterminedPoints)
+                {
+                    if (!visited[seedPoint.X, seedPoint.Y])
+                    {
+                        Color fillColor = GetRandomColor();
+                        FloodFillRecursive(bitmap, seedPoint, fillColor, visited, regionColors);
+                    }
+                }
+            }
+
+            private static Color GetRandomColor()
+            {
+                Random rand = new Random();
+                return Color.FromArgb(rand.Next(256), rand.Next(256), rand.Next(256));
+            }
+
+            private static void FloodFillRecursive(Bitmap bitmap, Point seed, Color fillColor, bool[,] visited, Dictionary<Point, Color> regionColors)
+            {
+                Stack<Point> stack = new Stack<Point>();
+                stack.Push(seed);
+
+                while (stack.Count > 0)
+                {
+                    Point current = stack.Pop();
+
+                    if (visited[current.X, current.Y])
+                    {
+                        continue;
+                    }
+
+                    visited[current.X, current.Y] = true;
+                    bitmap.SetPixel(current.X, current.Y, fillColor);
+                    regionColors[current] = fillColor;
+
+                    // Check neighboring pixels
+                    CheckAndPush(stack, bitmap, current.X - 1, current.Y, visited);
+                    CheckAndPush(stack, bitmap, current.X + 1, current.Y, visited);
+                    CheckAndPush(stack, bitmap, current.X, current.Y - 1, visited);
+                    CheckAndPush(stack, bitmap, current.X, current.Y + 1, visited);
+                }
+            }
+
+            private static void CheckAndPush(Stack<Point> stack, Bitmap bitmap, int x, int y, bool[,] visited)
+            {
+                if (x >= 0 && x < bitmap.Width && y >= 0 && y < bitmap.Height && !visited[x, y])
+                {
+                    stack.Push(new Point(x, y));
+                }
+            }
+        }
     }
 }
