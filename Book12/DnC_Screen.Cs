@@ -15,10 +15,9 @@ using Engine.Language;
 using Engine.Language.Examples;
 using Engine;
 using System.Reflection;
-using Engine.DelaunayVoronoi;
 using Book12.GameData;
 using DelaunayVoronoi;
-
+using Book12.MapStuff;
 
 
 namespace Book12
@@ -27,6 +26,7 @@ namespace Book12
     {
         //References the first instance of Main Screen
         public MainScreen main = Application.OpenForms.OfType<MainScreen>().FirstOrDefault();
+        public static int Scale2 = 100;
         public DnC_Screen(MainScreen main)
         {
             InitializeComponent();
@@ -41,41 +41,13 @@ namespace Book12
 
             Randomer.SetSeed(World.seed);
 
-
             //Prepares Map
             MapRenderer mapper = new MapRenderer();
             mapper.RenderMapInitial();
             mapper.RenderCities();
-            
-            //DL gen
-            DVPrinter dvprint = new DVPrinter();
-            dvprint.GenerateAndDraw();
-            var centerPoints = World.w_settlements.Values.Select(settlement => new DVPoint(settlement.X_Cord, settlement.Y_Cord));
-            dvprint.GenerateAndDrawWithCenters(centerPoints);
-
-            Bitmap bitmap2 = MapRenderer.CopyBitmap(World.map_Dict["DVMapWithCenters"]);
-            List<Point> points = new List<Point>();
-
-            //points.Add(new Point(World.w_settlements[0].X_Cord, World.w_settlements[0].Y_Cord));
-
-            foreach (var settlement in World.w_settlements.Values)
-            {
-                points.Add(new Point(settlement.X_Cord, settlement.Y_Cord));
-            }
-      
-            List<Point> yourPoints = points;
-            MapRenderer.FloodFill.ColorRegions(bitmap2, yourPoints);
-            World.map_Dict.Add("Colour Fill", bitmap2);
-
-            //FloodFill(World.map_Dict["DVMapWithCenters"], new Point(0, 0), Color.Black, Color.Red);
-            foreach (var seedPoint in points)
-            {
-                FloodFill(World.map_Dict["DVMapWithCenters"], seedPoint, Color.Black, GenerateColor(seedPoint.X, seedPoint.Y, World.World_Scale));
-            }
-
-
-
-
+            mapper.RenderProvincalBorders();
+            mapper.TintWorldMap();
+            mapper.PlaceCities();
 
             MenuList[1] = new MenuControls(1, "Map Menu", ":Main Menu/Map Selection", World.map_Dict.Keys.ToArray());
 
@@ -86,27 +58,6 @@ namespace Book12
             //Menu();
             MenuOut();
         }
-
-
-        public static Color GenerateColor(int x, int y, int scale)
-        {
-            // Map coordinates to RGB color
-            double angle = Math.Atan2(y, x);
-            double distance = Math.Sqrt(x * x + y * y);
-
-            int red = (int)(Math.Abs(Math.Cos(angle) * scale) + Randomer.Instance.Next(50, 100));
-            int green = (int)(Math.Abs(Math.Sin(angle) * scale) + Randomer.Instance.Next(50, 100));
-            int blue = (int)((distance / scale + Math.Abs(Math.Cos(angle))) * 255);
-
-            // Clamp values to valid RGB range (0-255)
-            red = Math.Min(255, Math.Max(0, red));
-            green = Math.Min(255, Math.Max(0, green));
-            blue = Math.Min(255, Math.Max(0, blue));
-
-            return Color.FromArgb(red, green, blue);
-        }
-
-
 
         //Menu Section
         string crntMenuDir = ":Main Menu";
@@ -131,73 +82,7 @@ namespace Book12
             nOut("e: Exit to Main Menu");
             nOut("x-----");
         }
-
-        private static Bitmap FloodFillRegions(Bitmap voronoiBitmap)
-        {
-            Dictionary<Point, Color> coloredRegions = new Dictionary<Point, Color>();
-
-            // Implement or use a flood fill algorithm to fill the Voronoi regions with different colors
-            // For simplicity, let's assume you have a function FloodFill(bitmap, startPoint, targetColor, replacementColor) that fills a region.
-
-            // Placeholder function (replace with actual implementation)
-            for (int x = 0; x < voronoiBitmap.Width; x++)
-            {
-                for (int y = 0; y < voronoiBitmap.Height; y++)
-                {
-                    Point startPoint = new Point(x, y);
-                    Color targetColor = voronoiBitmap.GetPixel(x, y);
-                    Color replacementColor = GetUniqueColor(coloredRegions);
-
-                    FloodFill(voronoiBitmap, startPoint, targetColor, replacementColor);
-                    coloredRegions[startPoint] = replacementColor;
-                }
-            }
-
-            return voronoiBitmap;
-        }
-
-        private static Color GetUniqueColor(Dictionary<Point, Color> coloredRegions)
-        {
-            // Generate a unique color for a region
-            // You can implement this based on your requirements
-            // For simplicity, let's use a random color here.
-
-            Random random = new Random();
-            Color randomColor = Color.FromArgb(random.Next(256), random.Next(256), random.Next(256));
-
-            // Ensure the generated color is unique
-            while (coloredRegions.ContainsValue(randomColor))
-            {
-                randomColor = Color.FromArgb(random.Next(256), random.Next(256), random.Next(256));
-            }
-
-            return randomColor;
-        }
-
-        private static void FloodFill(Bitmap bmp, Point pt, Color targetColor, Color replacementColor)
-        {
-            Stack<Point> pixels = new Stack<Point>();
-            targetColor = bmp.GetPixel(pt.X, pt.Y);
-            pixels.Push(pt);
-
-            while (pixels.Count > 0)
-            {
-                Point a = pixels.Pop();
-                if (a.X < bmp.Width && a.X >= 0 &&
-                        a.Y < bmp.Height && a.Y >= 0) // Make sure we stay within bounds
-                {
-                    if (bmp.GetPixel(a.X, a.Y) == targetColor)
-                    {
-                        bmp.SetPixel(a.X, a.Y, replacementColor);
-                        pixels.Push(new Point(a.X - 1, a.Y));
-                        pixels.Push(new Point(a.X + 1, a.Y));
-                        pixels.Push(new Point(a.X, a.Y - 1));
-                        pixels.Push(new Point(a.X, a.Y + 1));
-                    }
-                }
-            }
-        }
-
+        
         private void HandleMenuInput()
         {
             //Try to get int from menu input

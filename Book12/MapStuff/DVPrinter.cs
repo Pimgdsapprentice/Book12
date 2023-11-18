@@ -1,6 +1,4 @@
-﻿using Book12.GameData;
-using DelaunayVoronoi;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -9,28 +7,30 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 
-namespace Engine.DelaunayVoronoi
+using Book12.GameData;
+using Book12.MapStuff;
+using DelaunayVoronoi;
+
+namespace Book12.MapStuff
 {
     public class DVPrinter
     {
         private DelaunayTriangulator delaunay = new DelaunayTriangulator();
         private Voronoi voronoi = new Voronoi();
         public int PointCount { get; set; } = 2000;
+        public double DiagramWidth => MapSettings.mapX_Max;
+        public double DiagramHeight => MapSettings.mapY_Max;
 
-        // Map Settings
-        public static int mapX_Max = 1300;
-        public static int mapY_Max = 700;
-        public static Size size = new Size(mapX_Max, mapY_Max);
-
-        public double DiagramWidth => mapX_Max;
-        public double DiagramHeight => mapY_Max;
-
+        public void Intialize()
+        {
+            var points = delaunay.GeneratePoints(PointCount, DiagramWidth, DiagramHeight);
+        }
         public void GenerateAndDraw()
         {
             var points = delaunay.GeneratePoints(PointCount, DiagramWidth, DiagramHeight);
             var triangulation = delaunay.BowyerWatson(points);
             var voronoiEdges = voronoi.GenerateEdgesFromDelaunay(triangulation);
-            Bitmap bitmap = new Bitmap(mapX_Max, mapY_Max);
+            Bitmap bitmap = new Bitmap(MapSettings.mapX_Max, MapSettings.mapY_Max);
 
             using (Graphics g = Graphics.FromImage(bitmap))
             {
@@ -39,7 +39,7 @@ namespace Engine.DelaunayVoronoi
                 DrawVoronoi(g, voronoiEdges);
             }
 
-            World.map_Dict["DVMap"] = bitmap;
+            World.map_Dict[MapName.DvMap] = bitmap;
         }
 
         public void GenerateAndDrawWithCenters(IEnumerable<DVPoint> centerPoints)
@@ -52,7 +52,7 @@ namespace Engine.DelaunayVoronoi
             // Generate Delaunay triangulation and Voronoi edges using predetermined centers
             var triangulation = delaunay.BowyerWatson(centerPoints);
             var voronoiEdges = voronoi.GenerateEdgesFromDelaunay(triangulation);
-            Bitmap bitmap = new Bitmap(mapX_Max, mapY_Max);
+            Bitmap bitmap = new Bitmap(MapSettings.mapX_Max, MapSettings.mapY_Max);
 
             using (Graphics g = Graphics.FromImage(bitmap))
             {
@@ -60,19 +60,13 @@ namespace Engine.DelaunayVoronoi
                 DrawVoronoi(g, voronoiEdges);
             }
 
-            World.map_Dict["DVMapWithCenters"] = bitmap;
+            World.map_Dict[MapName.DVMapWithCenters] = bitmap;
         }
-
-        
-
-
-
-
         private void DrawPoints(Graphics g, IEnumerable<DVPoint> points)
         {
             foreach (var point in points)
             {
-                g.FillEllipse(System.Drawing.Brushes.Red, (float)point.X, (float)point.Y, 1, 1);
+                g.FillEllipse(Brushes.Red, (float)point.X, (float)point.Y, 1, 1);
             }
         }
 
@@ -89,7 +83,7 @@ namespace Engine.DelaunayVoronoi
             foreach (var edge in edges)
             {
                 g.DrawLine(
-                    new Pen(System.Drawing.Color.LightSteelBlue, 0.5f),
+                    new Pen(Color.LightSteelBlue, 0.5f),
                     Convert.ToInt32(edge.Point1.X),
                     Convert.ToInt32(edge.Point1.Y),
                     Convert.ToInt32(edge.Point2.X),
@@ -103,7 +97,7 @@ namespace Engine.DelaunayVoronoi
             foreach (var edge in voronoiEdges)
             {
                 g.DrawLine(
-                    new Pen(System.Drawing.Color.DarkViolet, 1),
+                    new Pen(MapSettings.mapBordersColor, 1),
                     Convert.ToInt32(edge.Point1.X),
                     Convert.ToInt32(edge.Point1.Y),
                     Convert.ToInt32(edge.Point2.X),

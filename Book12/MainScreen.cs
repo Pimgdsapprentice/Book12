@@ -1,32 +1,36 @@
-using Book12.GameData;
-using Engine;
-using Engine.Locations;
+﻿using Book12.GameData;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+using Book12.MapStuff;
 
 namespace Book12
 {
     public partial class MainScreen : Form
     {
         DnC_Screen dnC_scrn;
-
         public MainScreen()
         {
             InitializeComponent();
-            pictureBox1.Size = MapRenderer.size;
+            pictureBox1.Size = MapSettings.map_size;
             dnC_scrn = new DnC_Screen(this);
             dnC_scrn.Show();
-
         }
-
         public void ChangePictureBoxImage(Image newImage)
         {
             pictureBox1.Image = newImage;
         }
-
-        private void button4_Click(object sender, EventArgs e)
+        private void dNCBtn_Click(object sender, EventArgs e)
         {
             dnC_scrn.Show();
         }
-
         private void pictureBox1_Click(object sender, EventArgs e)
         {
             MouseEventArgs mouseEventArgs = e as MouseEventArgs;
@@ -53,8 +57,8 @@ namespace Book12
                         hasCity = true;
                     }
                 }
-                if (hasCity) 
-                { 
+                if (hasCity)
+                {
                 }
                 else
                 {
