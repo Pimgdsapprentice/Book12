@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,11 @@ using Engine;
 
 namespace Book12
 {
+    /// <summary>
+    /// Generates and caches bitmap layers for the main form.
+    /// MapRenderer relies on Engine.SimplexNoise to create terrain
+    /// and exposes the results via the static map_Dict dictionary.
+    /// </summary>
     public class MapRenderer
     {
         //Dictionary for bmps of Map
@@ -33,134 +39,104 @@ namespace Book12
         public static int cityDotInner = 6;
 
         Randomer randomer = new Randomer();
-        public static Tuple<int, int> randomCords(int xbuffer, int ybuffer) 
+        public static Tuple<int, int> randomCords(int xbuffer, int ybuffer)
         {
-            Random rnd = new Random();
             int randomX = Randomer.Instance.Next(xbuffer, mapX_Max - xbuffer);
             int randomY = Randomer.Instance.Next(ybuffer, mapY_Max - ybuffer);
             return Tuple.Create(randomX, randomY);
-            
+
         }
 
         public void RenderMapInitial()
         {
-            Bitmap bmp_Map = new Bitmap(size.Width, size.Height);
-            Bitmap bmp_is_Land = new Bitmap(size.Width, size.Height);
-            for (int x = 0; x < mapX_Max; x++)
+            Bitmap bmp_Map = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppArgb);
+            Bitmap bmp_is_Land = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppArgb);
+
+            Rectangle rect = new Rectangle(0, 0, size.Width, size.Height);
+            BitmapData mapData = bmp_Map.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            BitmapData landData = bmp_is_Land.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+            unsafe
             {
+                byte* mapPtr = (byte*)mapData.Scan0;
+                byte* landPtr = (byte*)landData.Scan0;
+
                 for (int y = 0; y < mapY_Max; y++)
                 {
-                    float CalcE = (float)(Engine.SimplexNoise.GenerateO(x, y, (int)mapESet[0], mapESet[1], mapESet[2], mapESet[3], mapESet[4]));
-                    float CalcM = (float)(Engine.SimplexNoise.GenerateO(x, y, (int)mapMSet[0], mapMSet[1], mapMSet[2], mapMSet[3], mapMSet[4]));
+                    byte* rowMap = mapPtr + (y * mapData.Stride);
+                    byte* rowLand = landPtr + (y * landData.Stride);
+                    for (int x = 0; x < mapX_Max; x++)
+                    {
+                        float CalcE = (float)Engine.SimplexNoise.GenerateO(x, y, (int)mapESet[0], mapESet[1], mapESet[2], mapESet[3], mapESet[4]);
+                        float CalcM = (float)Engine.SimplexNoise.GenerateO(x, y, (int)mapMSet[0], mapMSet[1], mapMSet[2], mapMSet[3], mapMSet[4]);
 
-                    // shading
-                    if (CalcE < mapEVal[0])
-                    {
-                        //Ocean
-                        bmp_Map.SetPixel(x, y, Color.FromArgb(67, 67, 122));
-                    }
-                    else
-                    {
-                        bmp_is_Land.SetPixel(x, y, Color.FromArgb(34, 139, 34));
-                        if (CalcE < mapEVal[1])
+                        bool isLand = false;
+                        Color pixelColor;
+
+                        if (CalcE < mapEVal[0])
                         {
-                            //Beach
-                            bmp_Map.SetPixel(x, y, Color.FromArgb(160, 145, 119));
-                        }
-                        else if (CalcE > mapEVal[2])
-                        {
-                            if (CalcM < mapMVal[0])
-                            {
-                                //return SCORCHED;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(85, 85, 85));
-                            }
-                            else if (CalcM < mapMVal[1])
-                            {
-                                //return BARE;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(136, 136, 136));
-                            }
-                            else if (CalcM < mapMVal[2])
-                            {
-                                //return TUNDRA;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(188, 188, 171));
-                            }
-                            else
-                            {
-                                //return SNOW;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(221, 221, 228));
-                            }
-                        }
-                        else if (CalcE > mapEVal[3])
-                        {
-                            if (CalcM < mapMVal[3])
-                            {
-                                //return TEMPERATE_DESERT;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(201, 210, 155));
-                            }
-                            else if (CalcM < mapMVal[4])
-                            {
-                                // RETURN SHRUBLAND;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(136, 153, 119));
-                            }
-                            else
-                            {
-                                // RETURN TAIGA;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(153, 171, 119));
-                            }
-                        }
-                        else if (CalcE > mapEVal[4])
-                        {
-                            if (CalcM < mapMVal[5])
-                            {
-                                // RETURN TEMPERATE_DESERT;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(201, 210, 155));
-                            }
-                            else if (CalcM < mapMVal[6])
-                            {
-                                // RETURN GRASSLAND;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(136, 171, 86));
-                            }
-                            else if (CalcM < mapMVal[7])
-                            {
-                                // RETURN TEMPERATE_DECIDUOUS_FOREST;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(103, 147, 89));
-                            }
-                            else
-                            {
-                                // RETURN TEMPERATE_RAIN_FOREST;
-                                //bmp_Map.SetPixel(x, y, Color.FromArgb(201, 210, 155);
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(67, 136, 85));
-                            }
+                            pixelColor = Color.FromArgb(67, 67, 122); // ocean
                         }
                         else
                         {
-                            if (CalcM < mapMVal[8])
+                            isLand = true;
+                            if (CalcE < mapEVal[1])
                             {
-                                // RETURN SUBTROPICAL_DESERT;
-                                //bmp_Map.SetPixel(x, y, Color.FromArgb(136, 171, 86);
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(210, 186, 139));
+                                pixelColor = Color.FromArgb(160, 145, 119); // beach
                             }
-                            else if (CalcM < mapMVal[9])
+                            else if (CalcE > mapEVal[2])
                             {
-                                // RETURN GRASSLAND;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(136, 171, 85));
+                                if (CalcM < mapMVal[0]) pixelColor = Color.FromArgb(85, 85, 85);
+                                else if (CalcM < mapMVal[1]) pixelColor = Color.FromArgb(136, 136, 136);
+                                else if (CalcM < mapMVal[2]) pixelColor = Color.FromArgb(188, 188, 171);
+                                else pixelColor = Color.FromArgb(221, 221, 228);
                             }
-
-                            else if (CalcM < mapMVal[10])
+                            else if (CalcE > mapEVal[3])
                             {
-                                // RETURN TROPICAL_SEASONAL_FOREST;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(86, 153, 68));
+                                if (CalcM < mapMVal[3]) pixelColor = Color.FromArgb(201, 210, 155);
+                                else if (CalcM < mapMVal[4]) pixelColor = Color.FromArgb(136, 153, 119);
+                                else pixelColor = Color.FromArgb(153, 171, 119);
+                            }
+                            else if (CalcE > mapEVal[4])
+                            {
+                                if (CalcM < mapMVal[5]) pixelColor = Color.FromArgb(201, 210, 155);
+                                else if (CalcM < mapMVal[6]) pixelColor = Color.FromArgb(136, 171, 86);
+                                else if (CalcM < mapMVal[7]) pixelColor = Color.FromArgb(103, 147, 89);
+                                else pixelColor = Color.FromArgb(67, 136, 85);
                             }
                             else
                             {
-                                // RETURN TROPICAL_RAIN_FOREST;
-                                bmp_Map.SetPixel(x, y, Color.FromArgb(51, 119, 65));
+                                if (CalcM < mapMVal[8]) pixelColor = Color.FromArgb(210, 186, 139);
+                                else if (CalcM < mapMVal[9]) pixelColor = Color.FromArgb(136, 171, 85);
+                                else if (CalcM < mapMVal[10]) pixelColor = Color.FromArgb(86, 153, 68);
+                                else pixelColor = Color.FromArgb(51, 119, 65);
                             }
                         }
-                    }
 
+                        int idx = x * 4;
+                        rowMap[idx] = pixelColor.B;
+                        rowMap[idx + 1] = pixelColor.G;
+                        rowMap[idx + 2] = pixelColor.R;
+                        rowMap[idx + 3] = pixelColor.A;
+
+                        if (isLand)
+                        {
+                            rowLand[idx] = 34;
+                            rowLand[idx + 1] = 139;
+                            rowLand[idx + 2] = 34;
+                            rowLand[idx + 3] = 255;
+                        }
+                        else
+                        {
+                            rowLand[idx] = rowLand[idx + 1] = rowLand[idx + 2] = rowLand[idx + 3] = 0;
+                        }
+                    }
                 }
             }
+
+            bmp_Map.UnlockBits(mapData);
+            bmp_is_Land.UnlockBits(landData);
+
             map_Dict["Map"] = bmp_Map;
             map_Dict["is_Land_Map"] = bmp_is_Land;
         }
